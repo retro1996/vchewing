@@ -16,7 +16,15 @@ extension SessionCtl {
   // MARK: Public
 
   override public func menu() -> NSMenu {
-    NSMenu().appendItems(self) {
+    let menuResult = Self.menu.propagateTarget(self)
+    if let ramUsed = Self.currentRAMUsageDescription {
+      menuResult.items.first?.title = ramUsed
+    }
+    return menuResult
+  }
+
+  public static let menu: NSMenu = {
+    NSMenu().appendItems {
       NSMenu.Item(verbatim: currentRAMUsageDescription)
       NSMenu.Item(
         verbatim: String(
@@ -138,7 +146,7 @@ extension SessionCtl {
         .act(#selector(selfUninstall(_:)))
         .nulled(silentMode || !optionKeyPressed)
     }
-  }
+  }()
 
   @objc
   public func switchInputMode(_: Any? = nil) {
@@ -375,27 +383,37 @@ extension SessionCtl {
 
   @objc
   public func openUserPhrases(_: Any? = nil) {
-    LMMgr.openUserDictFile(type: .thePhrases, dual: optionKeyPressed, alt: optionKeyPressed)
+    LMMgr.openUserDictFile(
+      type: .thePhrases, dual: Self.optionKeyPressed, alt: Self.optionKeyPressed
+    )
   }
 
   @objc
   public func openExcludedPhrases(_: Any? = nil) {
-    LMMgr.openUserDictFile(type: .theFilter, dual: optionKeyPressed, alt: optionKeyPressed)
+    LMMgr.openUserDictFile(
+      type: .theFilter, dual: Self.optionKeyPressed, alt: Self.optionKeyPressed
+    )
   }
 
   @objc
   public func openUserSymbols(_: Any? = nil) {
-    LMMgr.openUserDictFile(type: .theSymbols, dual: optionKeyPressed, alt: optionKeyPressed)
+    LMMgr.openUserDictFile(
+      type: .theSymbols, dual: Self.optionKeyPressed, alt: Self.optionKeyPressed
+    )
   }
 
   @objc
   public func openPhraseReplacement(_: Any? = nil) {
-    LMMgr.openUserDictFile(type: .theReplacements, dual: optionKeyPressed, alt: optionKeyPressed)
+    LMMgr.openUserDictFile(
+      type: .theReplacements, dual: Self.optionKeyPressed, alt: Self.optionKeyPressed
+    )
   }
 
   @objc
   public func openAssociatedPhrases(_: Any? = nil) {
-    LMMgr.openUserDictFile(type: .theAssociates, dual: optionKeyPressed, alt: optionKeyPressed)
+    LMMgr.openUserDictFile(
+      type: .theAssociates, dual: Self.optionKeyPressed, alt: Self.optionKeyPressed
+    )
   }
 
   @objc
@@ -428,10 +446,13 @@ extension SessionCtl {
 
   // MARK: Internal
 
-  var optionKeyPressed: Bool { NSEvent.keyModifierFlags.contains(.option) }
-  var silentMode: Bool { core.clientBundleIdentifier == "com.apple.SecurityAgent" }
+  static var optionKeyPressed: Bool { NSEvent.keyModifierFlags.contains(.option) }
 
-  var currentRAMUsageDescription: String? {
+  static var silentMode: Bool {
+    Self.currentInputController?.core.clientBundleIdentifier == "com.apple.SecurityAgent"
+  }
+
+  static var currentRAMUsageDescription: String? {
     guard let currentMemorySizeInBytes = NSApplication.memoryFootprint else { return nil }
     let currentMemorySize: Double = (Double(currentMemorySizeInBytes) / 1_024 / 1_024)
       .rounded(toPlaces: 1)
